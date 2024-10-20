@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Operations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        button {
+            margin-right: 10px;
+        }
+        #itemList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #itemList li {
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRUD Operations</h1>
+    
+    <form id="itemForm">
+        <input type="hidden" id="itemId">
+        <input type="text" id="name" placeholder="Item Name" required>
+        <textarea id="description" placeholder="Item Description"></textarea>
+        <button type="submit">Add/Update Item</button>
+        <button type="button" onclick="clearForm()">Clear Form</button>
+    </form>
+
+    <ul id="itemList"></ul>
+
+    <script>
+        const API_URL = '/items';
+        const itemForm = document.getElementById('itemForm');
+        const itemList = document.getElementById('itemList');
+
+        function loadItems() {
+            axios.get(API_URL)
+                .then(response => {
+                    itemList.innerHTML = '';
+                    response.data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <strong>${item.name}</strong>: ${item.description}
+                            <button onclick="editItem(${item.id}, '${item.name}', '${item.description}')">Edit</button>
+                            <button onclick="deleteItem(${item.id})">Delete</button>
+                        `;
+                        itemList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Error loading items:', error));
+        }
+
+        itemForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('itemId').value;
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+
+            if (id) {
+                axios.put(`${API_URL}/${id}`, { name, description })
+                    .then(() => {
+                        loadItems();
+                        clearForm();
+                    })
+                    .catch(error => console.error('Error updating item:', error));
+            } else {
+                axios.post(API_URL, { name, description })
+                    .then(() => {
+                        loadItems();
+                        clearForm();
+                    })
+                    .catch(error => console.error('Error creating item:', error));
+            }
+        });
+
+        function editItem(id, name, description) {
+            document.getElementById('itemId').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('description').value = description;
+        }
+
+        function deleteItem(id) {
+            if (confirm('Are you sure you want to delete this item?')) {
+                axios.delete(`${API_URL}/${id}`)
+                    .then(() => loadItems())
+                    .catch(error => console.error('Error deleting item:', error));
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('itemId').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('description').value = '';
+        }
+
+        loadItems();
+    </script>
+</body>
+</html>
